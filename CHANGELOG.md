@@ -13,5 +13,4 @@ e questo progetto aderisce a [Semantic Versioning](https://semver.org/spec/v2.0.
 - Aggiunto nuovo modello `edgetpu.tflite` alla cartella `models`. Questo modello è ottimizzato per l'esecuzione su dispositivi con risorse limitate e permette il riconoscimento di diverse gesture in tempo reale.
 - Implementato nuovo codice di esempio in C++ che dimostra come utilizzare il modello `edgetpu.tflite` per il riconoscimento delle gesture. Questo esempio è disponibile nella cartella `examples`.
 
-<!-- Inserire il link al tag del tuo rilascio, che sarà disponibile dopo aver pubblicato la v0.1.0. Questo fornirà uno storico che permette agli utenti di vedere tutte le modifiche tra le varie versioni. -->
-[0.1.0]: https://github.com/your_username/your_project/releases/tag/v0.1.0
+[0.1.0]: https://github.com/andmartorello/detectGesture/releases/tag/2023-10-23
