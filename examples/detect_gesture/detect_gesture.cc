@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Inclusione delle librerie necessarie per il funzionamento del programma.
 #include <vector>
 
 #include "libs/base/filesystem.h"
@@ -29,50 +30,72 @@ namespace coralmicro {
 
 namespace {
 
+// Percorso al modello di machine learning che sarà utilizzato per l'inferenza.
 constexpr char kModelPath[] = "/models/model_edgetpu.tflite";
-constexpr int kTensorArenaSize = 8 * 1024 * 1024;
+
+// Definizione della dimensione dell'arena per i tensori (memoria allocata per l'esecuzione del modello).
+constexpr int kTensorArenaSize = 8 * 1024 * 1024; // 8MB
+
+// Allocazione dello spazio per l'arena del tensore nell'SDRAM (memoria statica).
 STATIC_TENSOR_ARENA_IN_SDRAM(tensor_arena, kTensorArenaSize);
 
+// Funzione principale del programma.
 [[noreturn]] void Main() {
+  // Accende il LED di stato per indicare l'inizio del processo.
   LedSet(Led::kStatus, true);
 
+  // Carica il modello di machine learning dal file system nella memoria.
   std::vector<uint8_t> model;
   LfsReadFile(kModelPath, &model);
 
+  // Inizializza il contesto del dispositivo Edge TPU (acceleratore hardware per il machine learning).
   auto tpu_context = EdgeTpuManager::GetSingleton()->OpenDevice();
 
+  // Crea un reporter degli errori per TensorFlow Lite.
   tflite::MicroErrorReporter error_reporter;
-  tflite::MicroMutableOpResolver<3> resolver;
-  resolver.AddDequantize();
-  resolver.AddDetectionPostprocess();
-  resolver.AddCustom(kCustomOp, RegisterCustomOp());
 
-  tflite::MicroInterpreter interpreter(tflite::GetModel(model.data()), resolver,
+  // Prepara il risolutore di operazioni con le operazioni necessarie per il modello da utilizzare.
+  tflite::MicroMutableOpResolver<3> resolver;
+  resolver.AddDequantize();  // Per operazioni di dequantizzazione.
+  resolver.AddDetectionPostprocess();  // Per il post-processing del rilevamento.
+  resolver.AddCustom(kCustomOp, RegisterCustomOp());  // Aggiunge operazioni personalizzate.
+
+  // Crea un interprete TensorFlow Lite con il modello caricato, il risolutore, e l'arena del tensore.
+  tflite::MicroInterpreter interpreter(tflite::GetModel(model.data()), resolver, 
                                        tensor_arena, kTensorArenaSize, &error_reporter);
 
+  // Alloca i tensori necessari per l'interprete.
   interpreter.AllocateTensors();
 
+  // Accende la fotocamera e imposta la modalità di streaming.
   CameraTask::GetSingleton()->SetPower(true);
   CameraTask::GetSingleton()->Enable(CameraMode::kStreaming);
 
+  // Ottiene il tensore di input e le sue dimensioni (larghezza e altezza) per il modello.
   auto* input_tensor = interpreter.input_tensor(0);
   int model_height = input_tensor->dims->data[1];
   int model_width = input_tensor->dims->data[2];
 
+  // Ciclo principale di elaborazione delle immagini e inferenza.
   while (true) {
+    // Configura il formato del frame della fotocamera per adattarlo all'input del modello.
     CameraFrameFormat fmt{CameraFormat::kRgb, CameraFilterMethod::kBilinear, 
                           CameraRotation::k270, model_width, model_height, false,
                           tflite::GetTensorData<uint8_t>(input_tensor)};
 
+    // Cattura il frame corrente dalla fotocamera.
     CameraTask::GetSingleton()->GetFrame({fmt});
 
+    // Esegue l'inferenza sul frame catturato.
     interpreter.Invoke();
 
+    // Recupera il tensore di output dall'interprete.
     TfLiteTensor* output_tensor = interpreter.output_tensor(0);
     uint8_t* output_data = tflite::GetTensorData<uint8_t>(output_tensor);
-    
+
+    // Analizza i dati di output per determinare il risultato con la maggiore probabilità.
     int max_index = 0;
-    float max_value = (output_data[0] / 255.0) * 100.0; // assuming the data is uint8_t and needs scaling
+    float max_value = (output_data[0] / 255.0) * 100.0; // Scala i dati da uint8_t.
     for (int i = 1; i < 3; ++i) {
       float curr_value = (output_data[i] / 255.0) * 100.0;
       if (curr_value > max_value) {
@@ -81,20 +104,23 @@ STATIC_TENSOR_ARENA_IN_SDRAM(tensor_arena, kTensorArenaSize);
       }
     }
 
+    // Nomi delle classi per l'output dell'inferenza.
     const char* class_names[] = {"ok", "palm", "peace"};
-    // Controllo se la massima confidenza è maggiore del 95%
-	  if (max_value > 95.0) {
-	    // Stampa solo se la confidenza è maggiore del 95%
-	    printf("Highest confidence: %s (%f%%)\r\n", class_names[max_index], max_value);
-	  }
+
+    // Se la confidenza del risultato è maggiore del 95%, stampa il risultato.
+    if (max_value > 95.0) {
+      printf("Highest confidence: %s (%f%%)\r\n", class_names[max_index], max_value);
+    }
   }
 }
 
-}  // namespace
-} //coralmicro
+}  // namespace anonimo
+}  // namespace coralmicro
+
+// Funzione di ingresso principale, invocata all'avvio dell'applicazione.
 extern "C" void app_main(void* param) {
-  (void)param;
-  coralmicro::Main();
+  (void)param; // Ignora il parametro non utilizzato.
+  coralmicro::Main(); // Avvia la funzione principale del programma.
 }
 
 
