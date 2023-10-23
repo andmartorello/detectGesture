@@ -106,12 +106,4 @@ For support, feature requests, or inquiries, please refer to the [issues](https:
 
 ---
 
-## Attribuzione
-
-Questo progetto si basa su ["coralmicro"](https://github.com/google-coral/coralmicro) 
-
-Copyright 2023 Andrea Martorello
-
-Distribuito sotto licenza Apache 2.0. Per maggiori informazioni, consultare il file LICENSE.
-
 Project Link: [https://github.com/andmartorello/detectGesture](https://github.com/andmartorello/detectGesture)
