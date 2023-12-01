@@ -60,12 +60,17 @@ Follow these steps for setting up and running the gesture recognition system:
     cd coralmicro
     bash setup.sh
     ```
-5. **Flash the Program**:
+5. **Build the Project**:
+    Run the bash build.sh command to build the project.
+    ```sh
+    bash build.sh
+    ```
+6. **Flash the Program**:
     Use the `flashtool` script to flash the `detect_gesture` program onto the Coral Dev Board.
     ```sh
-    python3 scripts/flashtool.py -e detect_gesture
+    pytho3 scripts/flashtool.py n-e detect_gesture
     ```
-6. **(Optional) Custom Modifications**:
+7. **(Optional) Custom Modifications**:
     Feel free to modify the `detect_gesture` file to suit your needs. If you make changes, recompile the program.
     ```sh
     make -C build/examples/detect_gesture
@@ -74,6 +79,19 @@ Follow these steps for setting up and running the gesture recognition system:
     ```sh
     python3 scripts/flashtool.py -e detect_gesture --nodata
     ```
+### Multi-Core Gesture Detection
+
+This section introduces an additional example that leverages the dual-core capabilities of the Coral Dev Board Micro. In this example, the M4 core is used for motion detection through the camera. Once motion is detected, the M4 core is paused, and the M7 core is activated to recognize a specific gesture using a trained model. After the gesture is recognized, control is handed back to the M4 core.
+
+This example demonstrates the seamless integration and coordination between the two cores, showcasing the board's ability to handle complex, multi-stage processing tasks efficiently.
+
+#### Running the Multi-Core Gesture Detection Example
+
+To run this example, follow the standard setup and build steps as described in the Installation and Execution section. After completing the build process with bash build.sh, use the following command to flash the multi-core gesture detection example onto the Coral Dev Board:
+```sh
+python3 scripts/flashtool.py -a multicore_detect_gesture
+```
+This command should be executed after successfully running bash build.sh, ensuring that all necessary components are correctly built and ready for deployment.
 
 ## Visualizing Serial Outputs
 
